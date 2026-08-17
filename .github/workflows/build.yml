@@ -1,22 +1,38 @@
-name: Build APK Kivy
+name: Build APK Tanpa Docker
 on: [push, pull_request]
 
 jobs:
-  build:
+  build-android:
+    name: Build untuk Android
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout Kode
+        uses: actions/checkout@v4
 
-      - name: Build APK dengan Buildozer
-        uses: ArtemSBulgakov/buildozer-action@v1
-        id: buildozer
+      - name: Setup Python
+        uses: actions/setup-python@v5
         with:
-          command: buildozer android debug
-          buildozer_version: master
+          python-python: '3.11'
 
-      - name: Upload Hasil APK
+      - name: Install Pendukung Java dan Android
+        run: |
+          sudo apt update
+          sudo apt install -y git zip unzip openjdk-17-jdk python3-pip autoconf libtool pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev libtinfo5 cmake libffi-dev libssl-dev
+
+      - name: Install Buildozer dan Cython
+        run: |
+          pip3 install --user --upgrade buildozer Cython virtualenv
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Mulai Merakit APK
+        run: |
+          export APP_ANDROID_ACCEPT_SDK_LICENSE=1
+          export BUILDOZER_WARN_ON_ROOT=0
+          buildozer android debug
+
+      - name: Simpan dan Upload Hasil APK
         uses: actions/upload-artifact@v4
         with:
           name: Game-Backrooms-APK
-          path: ${{ steps.buildozer.outputs.filename }}
+          path: bin/*.apk
